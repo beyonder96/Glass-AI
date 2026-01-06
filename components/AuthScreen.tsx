@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard';
 import { Chrome, User, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
-import { signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth'; 
+import { 
+  signInWithRedirect, 
+  getRedirectResult, 
+  onAuthStateChanged 
+} from 'firebase/auth'; // Adicionado onAuthStateChanged
 import { auth, googleProvider } from '../services/firebase';
 
 interface AuthScreenProps {
@@ -12,14 +16,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState<'google' | 'guest' | null>(null);
 
   useEffect(() => {
-    // 1. MONITOR DE SESSÃO ATIVA: Se você já estiver logado no navegador, ele entra direto
+    // 1. MONITOR DE SESSÃO ATIVA (Persistência)
+    // Isso garante que se você atualizar a página ou já estiver logado, o app avance sozinho
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email === "kennedoliveiratm@gmail.com") {
-        onLogin('google');
+      if (user) {
+        if (user.email === "kennedoliveiratm@gmail.com") {
+          onLogin('google');
+        } else {
+          // Se for outro e-mail, desloga por segurança
+          auth.signOut();
+        }
       }
     });
 
-    // 2. CAPTURA DE RETORNO: Processa o login após o redirecionamento do Google
+    // 2. CAPTURA DE RETORNO DO REDIRECIONAMENTO
     const checkRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
@@ -40,7 +50,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
     checkRedirect();
     
-    // Limpeza ao desmontar o componente
+    // Limpeza do monitor ao fechar o componente
     return () => unsubscribe();
   }, [onLogin]);
 
@@ -49,14 +59,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     
     if (type === 'google') {
       try {
-        // Usa Redirect em vez de Popup para compatibilidade total com Vercel/Browsers
+        // Redirecionamento é mais estável para ambientes como Vercel/Navegadores Mobile
         await signInWithRedirect(auth, googleProvider);
       } catch (error) {
         console.error("Erro ao iniciar login:", error);
         setLoading(null);
       }
     } else {
-      // Modo Convidado
+      // Modo Convidado (Simulação com delay para UX)
       setTimeout(() => {
         onLogin('guest');
         setLoading(null);
@@ -75,6 +85,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
         <GlassCard className="text-center relative overflow-hidden" padding="p-8 py-12">
             
+            {/* Área do Logo */}
             <div className="mb-8 relative">
                 <div className="w-20 h-20 mx-auto bg-slate-800 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-slate-400/50 mb-6 relative z-10">
                     <Zap size={40} fill="currentColor" className="animate-pulse" />
@@ -85,6 +96,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Assistente Pessoal Inteligente</p>
             </div>
 
+            {/* Botões de Ação */}
             <div className="space-y-4">
                 <button
                     onClick={() => handleAuth('google')}
@@ -129,6 +141,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                 </button>
             </div>
 
+            {/* Rodapé */}
             <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 <ShieldCheck size={12} />
                 <span>Ambiente Seguro & Privado</span>
