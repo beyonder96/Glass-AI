@@ -81,18 +81,17 @@ export const getAssistantChat = (systemContext: string, location?: LocationCoord
   return chatSession;
 };
 
-export const sendMessageStream = async (prompt: string, context: string, location?: LocationCoords, userDataContext?: string) => {
-    const chat = getAssistantChat(context, location);
-    const contextPrompt = `
-    [CONTEXTO_SISTEMA]
-    ${userDataContext}
-    [/CONTEXTO_SISTEMA]
-    
-    LOCALIZAÇÃO: ${location ? `Lat: ${location.latitude}, Lng: ${location.longitude}` : 'Omitida'}
-    
-    USUÁRIO DIZ: ${prompt}`;
-    
-    return chat.sendMessageStream({ message: contextPrompt });
+export const sendMessageStream = async (prompt: string, context: string, location?: any, userDataContext?: string) => {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, userDataContext }),
+  });
+
+  if (!response.ok) throw new Error('Erro na API segura');
+  
+  // O retorno agora vem do seu servidor Vercel
+  return response.body; 
 };
 
 // FIX: Updated default TTS voice to 'Kore' as per Gemini API guidelines

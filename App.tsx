@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Adicionado useEffect
 import { Header } from './components/Header';
 import { Greeting } from './components/Greeting';
 import { AssistantBar } from './components/AssistantBar';
@@ -23,6 +22,10 @@ import { PersonaId, VoiceId, WidgetLayoutItem } from './types';
 import { useData } from './contexts/DataContext';
 import { LayoutGrid, Maximize2, Minimize2, MoveUp, MoveDown, Check, Settings2, Eye, EyeOff } from 'lucide-react';
 
+// Importações do Firebase para persistência
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './services/firebase';
+
 type ViewState = 'dashboard' | 'finance' | 'tasks' | 'shopping' | 'pets' | 'ape' | 'map';
 
 const App: React.FC = () => {
@@ -39,15 +42,37 @@ const App: React.FC = () => {
 
   const { dashboardLayout, setDashboardLayout } = useData();
 
+  // LOGICA DE PERSISTÊNCIA: Monitora o estado do login
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Verificação de segurança: substitua pelo seu email real cadastrado
+      if (user && user.email === "seu-email@gmail.com") {
+        setIsAuthenticated(true);
+        setUserMode('google');
+      } else if (userMode !== 'guest') {
+        // Se não for modo convidado e não tiver usuário, desloga
+        setIsAuthenticated(false);
+        setUserMode(null);
+      }
+    });
+
+    return () => unsubscribe(); // Limpa o monitor ao desmontar o componente
+  }, [userMode]);
+
   const handleLogin = (type: 'google' | 'guest') => {
     setUserMode(type);
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUserMode(null);
-    setCurrentView('dashboard');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Desloga efetivamente do Firebase
+      setIsAuthenticated(false);
+      setUserMode(null);
+      setCurrentView('dashboard');
+    } catch (error) {
+      console.error("Erro ao sair:", error);
+    }
   };
 
   const toggleWidgetVisibility = (id: string) => {

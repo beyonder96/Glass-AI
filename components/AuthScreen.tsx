@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
 import { GlassCard } from './GlassCard';
 import { Chrome, User, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../services/firebase';
 
 interface AuthScreenProps {
   onLogin: (type: 'google' | 'guest') => void;
@@ -10,17 +11,37 @@ interface AuthScreenProps {
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState<'google' | 'guest' | null>(null);
 
-  const handleAuth = (type: 'google' | 'guest') => {
+  const handleAuth = async (type: 'google' | 'guest') => {
     setLoading(type);
-    // Simula um delay de rede para experiência UX premium
-    setTimeout(() => {
-      onLogin(type);
-    }, 1500);
+    
+    if (type === 'google') {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        
+        // SEGURANÇA: Substitui pelo teu e-mail real para restringir o acesso apenas a ti
+        if (result.user.email === "kennedoliveiratm@gmail.com") {
+          onLogin('google');
+        } else {
+          alert("Acesso negado. Apenas o administrador tem permissão.");
+          await auth.signOut();
+        }
+      } catch (error) {
+        console.error("Erro na autenticação:", error);
+      } finally {
+        setLoading(null);
+      }
+    } else {
+      // Mantém o modo convidado com um pequeno delay visual
+      setTimeout(() => {
+        onLogin('guest');
+        setLoading(null);
+      }, 800);
+    }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Animado */}
+      {/* Background Animado Original */}
       <div className="absolute inset-0 z-[-1] bg-gradient-to-br from-[#E0EAFC] via-[#CFDEF3] to-[#F3E7E9] animate-gradient-x">
          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-300/30 rounded-full blur-[100px] animate-float" />
          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-300/30 rounded-full blur-[120px] animate-float" style={{ animationDelay: '-2s' }} />
