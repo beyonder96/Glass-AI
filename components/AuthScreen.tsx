@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard';
 import { Chrome, User, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth'; 
 import { auth, googleProvider } from '../services/firebase';
 
 interface AuthScreenProps {
@@ -11,27 +11,52 @@ interface AuthScreenProps {
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState<'google' | 'guest' | null>(null);
 
+  useEffect(() => {
+    // 1. MONITOR DE SESSÃO ATIVA: Se você já estiver logado no navegador, ele entra direto
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email === "kennedoliveiratm@gmail.com") {
+        onLogin('google');
+      }
+    });
+
+    // 2. CAPTURA DE RETORNO: Processa o login após o redirecionamento do Google
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          if (result.user.email === "kennedoliveiratm@gmail.com") {
+            onLogin('google');
+          } else {
+            alert("Acesso negado. Apenas o administrador tem permissão.");
+            await auth.signOut();
+          }
+        }
+      } catch (error) {
+        console.error("Erro no retorno da autenticação:", error);
+      } finally {
+        setLoading(null);
+      }
+    };
+
+    checkRedirect();
+    
+    // Limpeza ao desmontar o componente
+    return () => unsubscribe();
+  }, [onLogin]);
+
   const handleAuth = async (type: 'google' | 'guest') => {
     setLoading(type);
     
     if (type === 'google') {
       try {
-        const result = await signInWithPopup(auth, googleProvider);
-        
-        // SEGURANÇA: Substitui pelo teu e-mail real para restringir o acesso apenas a ti
-        if (result.user.email === "kennedoliveiratm@gmail.com") {
-          onLogin('google');
-        } else {
-          alert("Acesso negado. Apenas o administrador tem permissão.");
-          await auth.signOut();
-        }
+        // Usa Redirect em vez de Popup para compatibilidade total com Vercel/Browsers
+        await signInWithRedirect(auth, googleProvider);
       } catch (error) {
-        console.error("Erro na autenticação:", error);
-      } finally {
+        console.error("Erro ao iniciar login:", error);
         setLoading(null);
       }
     } else {
-      // Mantém o modo convidado com um pequeno delay visual
+      // Modo Convidado
       setTimeout(() => {
         onLogin('guest');
         setLoading(null);
@@ -41,7 +66,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Animado Original */}
+      {/* Background Animado */}
       <div className="absolute inset-0 z-[-1] bg-gradient-to-br from-[#E0EAFC] via-[#CFDEF3] to-[#F3E7E9] animate-gradient-x">
          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-300/30 rounded-full blur-[100px] animate-float" />
          <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-300/30 rounded-full blur-[120px] animate-float" style={{ animationDelay: '-2s' }} />
@@ -50,7 +75,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-700">
         <GlassCard className="text-center relative overflow-hidden" padding="p-8 py-12">
             
-            {/* Logo/Icon Area */}
             <div className="mb-8 relative">
                 <div className="w-20 h-20 mx-auto bg-slate-800 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-slate-400/50 mb-6 relative z-10">
                     <Zap size={40} fill="currentColor" className="animate-pulse" />
@@ -61,7 +85,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Assistente Pessoal Inteligente</p>
             </div>
 
-            {/* Actions */}
             <div className="space-y-4">
                 <button
                     onClick={() => handleAuth('google')}
@@ -106,12 +129,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                 </button>
             </div>
 
-            {/* Footer info */}
             <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 <ShieldCheck size={12} />
                 <span>Ambiente Seguro & Privado</span>
             </div>
-
         </GlassCard>
       </div>
     </div>
