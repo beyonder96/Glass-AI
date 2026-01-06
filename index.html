@@ -4,21 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Assistente Glass</title>
-    
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <style>
-      body { margin: 0; overflow-x: hidden; background-color: #f8fafc; }
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .aura-orb-mesh {
-        background: radial-gradient(circle at 30% 30%, #475569, #0f172a);
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            animation: {
+              'gradient-x': 'gradient-x 15s ease infinite',
+              'float': 'float 6s ease-in-out infinite',
+              'aura-waves': 'aura-waves 2s ease-out infinite',
+              'pulse-fast': 'pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'shimmer': 'shimmer 2.5s infinite linear',
+            },
+            keyframes: {
+              'gradient-x': { '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' }, '50%': { 'background-size': '200% 200%', 'background-position': 'right center' } },
+              'float': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+              'aura-waves': { '0%': { transform: 'scale(1)', opacity: '0.6' }, '100%': { transform: 'scale(2.2)', opacity: '0' } },
+              'shimmer': { '0%': { transform: 'translateX(-100%)' }, '100%': { transform: 'translateX(100%)' } }
+            }
+          },
+        },
       }
+    </script>
+    <style>
+      body { margin: 0; overflow-x: hidden; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .aura-orb-mesh { background: radial-gradient(circle at 30% 30%, #475569, #0f172a); }
     </style>
   </head>
   <body>
